@@ -63,6 +63,18 @@
 		return
 	M.OpenCraftingMenu()
 
+/obj/screen/wield
+	name = "wield"
+	icon = 'icons/mob/screen_midnight.dmi'
+	icon_state = "wield"
+	screen_loc = ui_wield
+
+/obj/screen/wield/Click()
+	var/mob/living/M = usr
+	var/obj/item/W = M.get_active_held_item()
+	if(W)
+		W.attempt_wield(M)
+
 /obj/screen/inventory/area_creator
 	name = "create new area"
 	icon = 'icons/mob/screen_midnight.dmi'

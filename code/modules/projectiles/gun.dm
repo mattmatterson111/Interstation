@@ -483,3 +483,9 @@ obj/item/weapon/gun/proc/newshot()
 		azoom = new()
 		azoom.gun = src
 
+/obj/item/weapon/gun/update_icon()//If it has a special wielded icon we want it to show up here.
+	..()
+	if(wielded && wielded_icon)
+		item_state = wielded_icon
+	else
+		item_state = "[initial(item_state)]"

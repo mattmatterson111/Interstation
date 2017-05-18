@@ -14,6 +14,7 @@
 	mag_unload_sound = null		//Shotguns have their own procs related to loading, unloading, etc.
 	chamber_sound = null
 	fire_sound = 'sound/weapons/shotgun.ogg'
+	wielded_icon = "shotgun1"
 
 /obj/item/weapon/gun/projectile/shotgun/attackby(obj/item/A, mob/user, params)
 	. = ..()

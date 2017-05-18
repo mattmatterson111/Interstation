@@ -16,41 +16,38 @@
 //This rewrite means we don't have two variables for EVERY item which are used only by a few weapons.
 //It also tidies stuff up elsewhere.
 
-
+//I rewrote two-handing again, now any weapon can be two-handed, not just designated "twohanded" weapons. - Matt
 
 
 /*
  * Twohanded
  */
-/obj/item/weapon/twohanded
-	/*var/wielded = 0
+/obj/item/weapon
+	var/wielded = 0
 	var/force_unwielded = 0
 	var/force_wielded = 0
-	var/wieldsound = null
-	var/unwieldsound = null*/
+	var/wieldsound = 'sound/weapons/thudswoosh.ogg'//A familiar grab sound.
+	var/unwieldsound = null
+	var/wielded_icon = null
 
-/obj/item/weapon/proc/unwield(mob/living/carbon/user)
-	if(!wielded || !user)
-		return
+/obj/item/weapon/proc/unwield(mob/living/carbon/user, show_message = TRUE)
+	if(!wielded || !user) return
 	wielded = 0
 	if(force_unwielded)
 		force = force_unwielded
-	
-	if(!force_unwielded)//And now we're back to our original damage.
-		force = initial(force)
-	
+	else
+		force = (force / 1.5)
 	var/sf = findtext(name," (Wielded)")
 	if(sf)
 		name = copytext(name,1,sf)
 	else //something wrong
 		name = "[initial(name)]"
+	update_unwield_icon()
 	update_icon()
 	if(iscyborg(user))
-		user << "<span class='notice'>You free up your module.</span>"
-	else if(istype(src, /obj/item/weapon/twohanded/required))
-		user << "<span class='notice'>You drop [src].</span>"
+		user << "span class='notice'>You free up your module.</span>"
 	else
-		user << "<span class='notice'>You are now carrying [src] with one hand.</span>"
+		user.visible_message("<span class='warning'>[user] let's go of their other hand.")
 	if(unwieldsound)
 		playsound(loc, unwieldsound, 50, 1)
 	var/obj/item/weapon/twohanded/offhand/O = user.get_inactive_held_item()
@@ -59,61 +56,69 @@
 	return
 
 /obj/item/weapon/proc/wield(mob/living/carbon/user)
-	if(user.get_active_held_item() != src)
+	if(wielded) 
 		return
-	if(wielded)
-		return
+	
 	if(ismonkey(user))
 		user << "<span class='warning'>It's too heavy for you to wield fully.</span>"
 		return
 	if(user.get_inactive_held_item())
 		user << "<span class='warning'>You need your other hand to be empty!</span>"
 		return
-	if(user.get_num_arms() < 2)
-		user << "<span class='warning'>You don't have enough hands.</span>"
-		return
 	wielded = 1
 	if(force_wielded)
 		force = force_wielded
-	
-	if(!force_wielded)//Does 25% more damange weilded
-		force *= 1.30
-	
-	name = "[name] (Wielded)"
-	update_icon()
-	if(iscyborg(user))
-		user << "<span class='notice'>You dedicate your module to [src].</span>"
 	else
-		user << "<span class='notice'>You grab [src] with both hands.</span>"
-	if (wieldsound)
+		force = (force * 1.5)//However much more damage you want the weapon to do wielded goes here.
+	name = "wielded [name]"
+	update_wield_icon()
+	update_icon()//Legacy
+	if(iscyborg(user))
+		user.visible_message("<span class='warning'>[user] dedicates a module to the [initial(name)]s.")
+	else
+		user.visible_message("<span class='warning'>[user] grabs the [initial(name)] with both hands.")
+	if(wieldsound)
 		playsound(loc, wieldsound, 50, 1)
 	var/obj/item/weapon/twohanded/offhand/O = new(user) ////Let's reserve his other hand~
 	O.name = "[name] - offhand"
-	O.desc = "Your second grip on [src]."
+	O.desc = "Your second grip on the [name]"
 	user.put_in_inactive_hand(O)
 	return
+
+/obj/item/weapon/proc/update_wield_icon()
+	if((wielded) && wielded_icon)
+		item_state = wielded_icon
+
+/obj/item/weapon/proc/update_unwield_icon()//That way it doesn't interupt any other special icon_states.
+	if((wielded) && wielded_icon)
+		item_state = "[initial(item_state)]"
+
+//For general weapons.
+/obj/item/proc/attempt_wield(mob/user)
+	if(istype(src,/obj/item/weapon))//Istype hack to stop the proc from crashing if what you try to wield isn't a weapon.
+		var/obj/item/weapon/W = src
+		if(W.wielded) //Trying to unwield it
+			W.unwield(user)
+		else //Trying to wield it
+			W.wield(user)
 
 /obj/item/weapon/dropped(mob/user)
 	..()
 	//handles unwielding a twohanded weapon when dropped as well as clearing up the offhand
+	if(!wielded)
+		return
 	if(user)
 		var/obj/item/weapon/twohanded/O = user.get_inactive_held_item()
 		if(istype(O))
-			O.unwield(user)
-	return	unwield(user)
+			O.unwield(user, FALSE)
+	unwield(user)
 
-/obj/item/weapon/update_icon()
+/obj/item/weapon/twohanded/update_icon()
 	return
 
+//Keeping in the attack_self code for legacy purposes.
 /obj/item/weapon/twohanded/attack_self(mob/user)
 	..()
-	if(wielded) //Trying to unwield it
-		unwield(user)
-	else //Trying to wield it
-		wield(user)
-
-
-/obj/item/weapon/AltClick(mob/user)
 	if(wielded) //Trying to unwield it
 		unwield(user)
 	else //Trying to wield it
